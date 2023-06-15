@@ -1,13 +1,18 @@
 package jpa.experiment.experimentjpa.model;
 
+import jpa.experiment.experimentjpa.altcraft.UserAltcraftRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public abstract class ListenerMapper {
+
+    @Value("${alt-craft.test.token}")
+    private static String token;
 
     @Mapping(target = "id", source = "user.id")
     @Mapping(target = "phones", ignore = true)
@@ -23,6 +28,15 @@ public abstract class ListenerMapper {
         listenerDto.setPhones(List.of(user.getPhone()));
         listenerDto.setIdentification(getIdentificationList(user));
         return listenerDto;
+    }
+
+    public UserAltcraftRequest mapUserAltcraftRequest(ListenerEntity user) {
+        ListenerDto userAltcraftDto = mapUserAltcraftDto(user);
+        UserAltcraftRequest userAltcraftRequest = new UserAltcraftRequest();
+        userAltcraftRequest.setDbId(1);
+        userAltcraftRequest.setToken(token);
+        userAltcraftRequest.setData(userAltcraftDto);
+        return userAltcraftRequest;
     }
 
     public List<String> getIdentificationList(ListenerEntity user) {

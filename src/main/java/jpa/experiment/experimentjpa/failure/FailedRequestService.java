@@ -1,67 +1,29 @@
 package jpa.experiment.experimentjpa.failure;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jpa.experiment.experimentjpa.altcraft.UserAltcraft;
-import jpa.experiment.experimentjpa.altcraft.UserAltcraftRequest;
-import jpa.experiment.experimentjpa.altcraft.UserAltcraftResponse;
-import jpa.experiment.experimentjpa.exception.ExceptionMessage;
-import jpa.experiment.experimentjpa.model.ListenerDto;
-import jpa.experiment.experimentjpa.model.ListenerEntity;
-import jpa.experiment.experimentjpa.model.ListenerMapper;
-import jpa.experiment.experimentjpa.repository.JpaReposListener;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @Log4j2
 public class FailedRequestService implements FailedService{
     private final FailedUserRepository failedUserRepository;
-    private final RestTemplate restTemplate;
-    private final HttpHeaders httpHeaders;
-    private final ObjectMapper objectMapper;
-    private final JpaReposListener jpaReposListener;
-    private final UserAltcraft userAltcraft;
-    private final ListenerMapper mapper;
-
-
-//    @Value("alt-craft.test.url")
-    private String testUrl = "e29bee5f98e8479bb4e8fe6831f39359";
-
-    private final static String token = "e29bee5f98e8479bb4e8fe6831f39359";
-
-    public FailedRequestService(@Lazy FailedUserRepository failedUserRepository, RestTemplate restTemplate, ObjectMapper objectMapper, @Lazy JpaReposListener jpaReposListener, @Lazy UserAltcraft userAltcraft, ListenerMapper mapper) {
+    public FailedRequestService(@Lazy FailedUserRepository failedUserRepository) {
         this.failedUserRepository = failedUserRepository;
-        this.restTemplate = restTemplate;
-        this.objectMapper = objectMapper;
-        this.jpaReposListener = jpaReposListener;
-        this.userAltcraft = userAltcraft;
-        this.mapper = mapper;
-        this.httpHeaders = new HttpHeaders();
-        this.httpHeaders.set("Content-Type", "application/json");
     }
 
     @Override
+    @Transactional
     public void saveFailedRequest(FailedRequestEntity entity) {
-        FailedRequestEntity failedRequestEntity = new FailedRequestEntity();
-        failedRequestEntity.setErrUserId(entity.getErrUserId());
-        failedRequestEntity.setTimestamp(LocalDateTime.now());
-        failedUserRepository.save(failedRequestEntity);
+        entity.setErrUserId(entity.getErrUserId());
+        entity.setStatus(entity.getStatus());
+        entity.setTimestamp(entity.getTimestamp());
+        failedUserRepository.save(entity);
     }
+
 //    @Scheduled(fixedDelay = 180000)   // (cron = "0 0 2 * * ?") xar kun kechasi soat 2 da.
 //    public void sendFailedRequest(){
 //        List<ListenerEntity> requestEntityList = jpaReposListener.findFailedUsers();

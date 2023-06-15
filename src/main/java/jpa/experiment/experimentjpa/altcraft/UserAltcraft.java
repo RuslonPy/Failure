@@ -11,16 +11,20 @@ import jpa.experiment.experimentjpa.config.RestTemplateWrapper;
 import jpa.experiment.experimentjpa.exception.ExceptionMessage;
 import jpa.experiment.experimentjpa.failure.FailedRequestEntity;
 import jpa.experiment.experimentjpa.failure.FailedRequestService;
-import jpa.experiment.experimentjpa.model.ListenerDto;
+import jpa.experiment.experimentjpa.failure.FailedUserRepository;
+import jpa.experiment.experimentjpa.failure.RequestStatus;
 import jpa.experiment.experimentjpa.model.ListenerEntity;
 import jpa.experiment.experimentjpa.model.ListenerMapper;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.*;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @Log4j2
@@ -32,24 +36,25 @@ public class UserAltcraft {
     private final CircuitBreaker altcraftServiceCB;
     private final Bulkhead altcraftServiceBH;
     private final RestTemplateWrapper restTemplateWrapper;
+    private final FailedUserRepository failedUserRepository;
 
 //    private final LogService logService;
-    @Value("${alt-craft.test.url}")
-    private String testUrl;
-    @Value("${alt-craft.test.token}")
-    private static String token;
+//    @Value("${alt-craft.test.url}")
+    private String testUrl = "https://cdp.uzum.io/api/v1.1/profiles/import";
 
     public UserAltcraft(ListenerMapper mapper,
                         FailedRequestService failedRequestService,
                         RestTemplate restTemplate, RestTemplateWrapper restTemplateWrapper,
                         CircuitBreakerRegistry circuitBreakerRegistry,
-                        BulkheadRegistry bulkheadRegistry) {
+                        BulkheadRegistry bulkheadRegistry,
+                        @Lazy FailedUserRepository failedUserRepository) {
         this.mapper = mapper;
         this.failedRequestService = failedRequestService;
         this.restTemplate = restTemplate;
         this.altcraftServiceCB = circuitBreakerRegistry.circuitBreaker("altcraft-service-cb", R4jCircuitBreakerConfig.MERCHANT_SERVICE_CBC);
         this.altcraftServiceBH = bulkheadRegistry.bulkhead("altcraft-bh", R4jBulkHeadConfig.MERCHANT_SERVICE_BHC);
         this.restTemplateWrapper = restTemplateWrapper;
+        this.failedUserRepository = failedUserRepository;
         this.httpHeaders = new HttpHeaders();
         this.httpHeaders.set("Content-Type", "application/json");
     }
@@ -58,11 +63,7 @@ public class UserAltcraft {
     public void sendingProfile(ListenerEntity user) {
 
         try {
-            ListenerDto dto = mapper.mapUserAltcraftDto(user);
-            UserAltcraftRequest altCraftRequest = new UserAltcraftRequest();
-            altCraftRequest.setDbId(1);
-            altCraftRequest.setToken(token);
-            altCraftRequest.setData(dto);
+            UserAltcraftRequest altCraftRequest = mapper.mapUserAltcraftRequest(user);
             sendRequest(altCraftRequest);
         } catch (ExceptionMessage e) {
             throw new RuntimeException(e);
@@ -74,8 +75,9 @@ public class UserAltcraft {
 
     public void  sendRequest(UserAltcraftRequest userAltcraftRequest) throws ExceptionMessage{
 
+        UserAltcraftResponse response = null;
         try {
-            UserAltcraftResponse response = restTemplateWrapper.doRequest(
+            response = restTemplateWrapper.doRequest(
                     restTemplate,
                     altcraftServiceCB,
                     altcraftServiceBH,
@@ -89,25 +91,54 @@ public class UserAltcraft {
                     new UserAltcraftResponse(),
                     false);
 
-            if (response.getError() != 0){
-                FailedRequestEntity entity = new FailedRequestEntity();
-                entity.setErrUserId(userAltcraftRequest.getData().getId());
-                failedRequestService.saveFailedRequest(entity);
+            if (isErrorResponse(response)){
+                Long id = userAltcraftRequest.getData().getId();
+                failedUserRepository.findByErrUserId(id).ifPresentOrElse(
+                        entity -> {
+                            entity.setTimestamp(LocalDateTime.now());
+                            System.out.println("--------------------");
+                            failedRequestService.saveFailedRequest(entity);
+                        },
+                        () -> {
+                            FailedRequestEntity failedRequest = new FailedRequestEntity();
+                            failedRequest.setErrUserId(id);
+                            failedRequest.setStatus(RequestStatus.FAILED);
+                            failedRequest.setTimestamp(LocalDateTime.now());
+                            failedRequestService.saveFailedRequest(failedRequest);
+                        }
+                );
             }
-        } catch (HttpStatusCodeException e){
 
+
+        } catch (HttpStatusCodeException e){
             log.error("error log while occurred on transferring users: ",
                     ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
                             .body(e.getResponseBodyAsString()));
-        }catch (RestClientException ex){
-            FailedRequestEntity entity = new FailedRequestEntity();
-            entity.setErrUserId(userAltcraftRequest.getData().getId());
-            failedRequestService.saveFailedRequest(entity);
+        } catch (RestClientException ex){
+            // log rest client exception.
+        } catch (Exception exception){
+//            Long id = userAltcraftRequest.getData().getId();
+//            getFailedRequestById(id).ifPresent(entity -> {
+//                entity.setTimestamp(LocalDateTime.now());
+//            });
+//            failed = new FailedRequestEntity();
+//            failed.setErrUserId(id);
+//            failed.setStatus(RequestStatus.FAILED);
+////            FailedRequestEntity entity = new FailedRequestEntity();
+////            entity.setErrUserId(userAltcraftRequest.getData().getId());
+////            entity.setStatus(RequestStatus.FAILED);
+//            failedRequestService.saveFailedRequest(failed);
         }
 
-//            HttpEntity<UserAltcraftRequest> httpEntity = new HttpEntity<>(userAltcraftRequest, httpHeaders);
-//            UserAltcraftResponse body = restTemplate.postForEntity(testUrl, httpEntity, UserAltcraftResponse.class).getBody();
+
     }
+
+    public boolean isErrorResponse(UserAltcraftResponse response) {
+        return response == null || response.getError() != 0;
+    }
+//    private Optional<FailedRequestEntity> getFailedRequestById(Long id) {
+//        return failedUserRepository.findByErrUserId(id);
+//    }
 
     public UserAltcraftResponse response(){
         UserAltcraftResponse user = new UserAltcraftResponse();

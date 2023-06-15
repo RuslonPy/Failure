@@ -19,6 +19,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Log4j2
@@ -29,13 +30,9 @@ public class FailedRequestScheduler {
     private final HttpHeaders httpHeaders;
     private final JpaReposListener jpaReposListener;
     private final ListenerMapper mapper;
-
     private final FailedUserRepository failedUserRepository;
-
     @Value("${alt-craft.test.url}")
     private String testUrl;
-    @Value("${alt-craft.test.token}")
-    private String token;
 
     public FailedRequestScheduler(FailedRequestService failedRequestService, RestTemplate restTemplate, JpaReposListener jpaReposListener, ListenerMapper mapper, FailedUserRepository failedUserRepository) {
         this.failedRequestService = failedRequestService;
@@ -53,12 +50,8 @@ public class FailedRequestScheduler {
 
         for (ListenerEntity failed : requestEntityList) {
             try{
-                ListenerDto dto = mapper.mapUserAltcraftDto(failed);
-                UserAltcraftRequest altCraftRequest = new UserAltcraftRequest();
-                altCraftRequest.setDbId(1);
-                altCraftRequest.setToken(token);
-                altCraftRequest.setData(dto);
-                sendRequest(altCraftRequest, dto.getId());
+                UserAltcraftRequest altCraftRequest = mapper.mapUserAltcraftRequest(failed);
+                sendRequest(altCraftRequest, altCraftRequest.getData().getId());
                 System.out.println("Scheduled method executed and send data");
             } catch (ExceptionMessage e) {
                 throw new RuntimeException(e);
@@ -67,20 +60,22 @@ public class FailedRequestScheduler {
     }
 
     public void  sendRequest(UserAltcraftRequest userAltcraftRequest, Long id) throws ExceptionMessage {
-
+        UserAltcraftResponse body = null;
         try {
             HttpEntity<UserAltcraftRequest> httpEntity = new HttpEntity<>(userAltcraftRequest, httpHeaders);
-            UserAltcraftResponse body = restTemplate.postForEntity(testUrl, httpEntity, UserAltcraftResponse.class).getBody();
-            if (body.getError() == 0){
-                FailedRequestEntity failed = failedUserRepository.findByErrUserId(id);
-                failed.setStatus(RequestStatus.SENT);
-                failedUserRepository.save(failed);
-            }
+            body = restTemplate.postForEntity(testUrl, httpEntity, UserAltcraftResponse.class).getBody();
         } catch (HttpStatusCodeException e){
 
             log.error("error log while occurred on transferring users: ",
                     ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
                             .body(e.getResponseBodyAsString()));
+        }finally {
+            if (body != null && body.getError() == 0){
+                failedUserRepository.findByErrUserId(id).ifPresent(failed -> {
+                    failed.setStatus(RequestStatus.SENT);
+                    failedRequestService.saveFailedRequest(failed);
+                });
+            }
         }
     }
 }

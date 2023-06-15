@@ -1,6 +1,6 @@
 package jpa.experiment.experimentjpa.model;
 
-import jpa.experiment.experimentjpa.config.ListenerConfig;
+import jpa.experiment.experimentjpa.failure.MyEntityListener;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -9,11 +9,11 @@ import java.sql.Timestamp;
 
 @Entity
 @Data
-@EntityListeners(ListenerConfig.class)
+@EntityListeners(MyEntityListener.class)
 public class ListenerEntity implements Serializable{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     @Column(name = "phone")
     private String phone;
@@ -39,6 +39,18 @@ public class ListenerEntity implements Serializable{
     @Enumerated(EnumType.STRING)
     private Lang lang;
 
+    @Column(name = "man")
+    private String man;
+    @Column(name = "san")
+    private String san;
+    @Column(name = "anavi")
+    private String anavi;
+    @Column(name = "inabi")
+    private String inabi;
+    @Column(name = "biza")
+    private String biza;
+    @Column(name = "siza")
+    private String siza;
 
 
 }

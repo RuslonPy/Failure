@@ -1,6 +1,9 @@
 package jpa.experiment.experimentjpa.failure;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -8,14 +11,16 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "failed_users")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class FailedRequestEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     @Column(name = "")
     private Long errUserId;
     @Enumerated(EnumType.STRING)
-    private RequestStatus status = RequestStatus.FAILED;
+    private RequestStatus status;
     private LocalDateTime timestamp;
 
 }

@@ -16,4 +16,10 @@ public class ListenerEntityDto {
     private String apelsinCustomerId;
     private String city;
     private Lang lang;
+    private String man;
+    private String san;
+    private String anavi;
+    private String inabi;
+    private String biza;
+    private String siza;
 }
