@@ -12,7 +12,7 @@ import java.util.List;
 public abstract class ListenerMapper {
 
     @Value("${alt-craft.test.token}")
-    private static String token;
+    private String token;
 
     @Mapping(target = "id", source = "user.id")
     @Mapping(target = "phones", ignore = true)

@@ -44,7 +44,7 @@ public class FailedRequestScheduler {
         this.httpHeaders.set("Content-Type", "application/json");
     }
 
-    @Scheduled(fixedDelay = 60000)   // (cron = "0 0 2 * * ?") xar kun kechasi soat 2 da.
+    @Scheduled(fixedDelay = 300000)   // (cron = "0 0 2 * * ?") xar kun kechasi soat 2 da.
     public void sendFailedRequest(){
         List<ListenerEntity> requestEntityList = jpaReposListener.findFailedUsers();
 

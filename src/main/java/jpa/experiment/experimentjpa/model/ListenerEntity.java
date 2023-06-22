@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 public class ListenerEntity implements Serializable{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "phone")
     private String phone;

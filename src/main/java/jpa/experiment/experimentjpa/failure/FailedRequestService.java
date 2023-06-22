@@ -3,8 +3,8 @@ package jpa.experiment.experimentjpa.failure;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 
 @Service
@@ -16,11 +16,8 @@ public class FailedRequestService implements FailedService{
     }
 
     @Override
-    @Transactional
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void saveFailedRequest(FailedRequestEntity entity) {
-        entity.setErrUserId(entity.getErrUserId());
-        entity.setStatus(entity.getStatus());
-        entity.setTimestamp(entity.getTimestamp());
         failedUserRepository.save(entity);
     }
 

@@ -5,6 +5,8 @@ import jpa.experiment.experimentjpa.model.Lang;
 import jpa.experiment.experimentjpa.model.ListenerEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
@@ -19,28 +21,33 @@ public class MyEntityListener {
     @PostUpdate
     public void listenToFields(ListenerEntity entity){
 
-        String phone = entity.getPhone();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter(){
+            @Override
+            public void afterCompletion(int status) {
+                String phone = entity.getPhone();
 
-        String customerId = entity.getCustomerId();
+                String customerId = entity.getCustomerId();
 
-        Long registeredDate = entity.getRegisteredDate();
+                Long registeredDate = entity.getRegisteredDate();
 
-        Timestamp birthday = entity.getBirthday();
+                Timestamp birthday = entity.getBirthday();
 
-        String appVersion = entity.getAppVersion();
+                String appVersion = entity.getAppVersion();
 
-        String apelsinCustomerId = entity.getApelsinCustomerId();
+                String apelsinCustomerId = entity.getApelsinCustomerId();
 
-        String city = entity.getCity();
+                String city = entity.getCity();
 
-        Lang lang = entity.getLang();
+                Lang lang = entity.getLang();
 
-        if (!StringUtils.isEmpty(phone) || !StringUtils.isEmpty(customerId) || Objects.nonNull(registeredDate) ||
-                Objects.nonNull(birthday) || !StringUtils.isEmpty(appVersion)
-             || !StringUtils.isEmpty(apelsinCustomerId) || !StringUtils.isEmpty(city) || Objects.nonNull(lang)){
+                if (!StringUtils.isEmpty(phone) || !StringUtils.isEmpty(customerId) || Objects.nonNull(registeredDate) ||
+                        Objects.nonNull(birthday) || !StringUtils.isEmpty(appVersion)
+                        || !StringUtils.isEmpty(apelsinCustomerId) || !StringUtils.isEmpty(city) || Objects.nonNull(lang)){
 
-            userAltcraft.sendingProfile(entity);
-        }
+                    userAltcraft.sendingProfile(entity);
+                }
+            }
+        });
 
 
     }
