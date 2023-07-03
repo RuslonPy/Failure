@@ -36,7 +36,8 @@ public class UserAltcraft {
     private final CircuitBreaker altcraftServiceCB;
     private final Bulkhead altcraftServiceBH;
     private final RestTemplateWrapper restTemplateWrapper;
-    private final FailedUserRepository failedUserRepository;
+    private static final String ALTCRAFT_SERVICE_BREAKER = "altcraft-service-cb";
+    private static final String ALTCRAFT_BH = "arca-bulkhead";
 
 //    private final LogService logService;
 //    @Value("${alt-craft.test.url}")
@@ -46,15 +47,13 @@ public class UserAltcraft {
                         FailedRequestService failedRequestService,
                         RestTemplate restTemplate, RestTemplateWrapper restTemplateWrapper,
                         CircuitBreakerRegistry circuitBreakerRegistry,
-                        BulkheadRegistry bulkheadRegistry,
-                        @Lazy FailedUserRepository failedUserRepository) {
+                        BulkheadRegistry bulkheadRegistry) {
         this.mapper = mapper;
         this.failedRequestService = failedRequestService;
         this.restTemplate = restTemplate;
-        this.altcraftServiceCB = circuitBreakerRegistry.circuitBreaker("altcraft-service-cb", R4jCircuitBreakerConfig.MERCHANT_SERVICE_CBC);
-        this.altcraftServiceBH = bulkheadRegistry.bulkhead("altcraft-bh", R4jBulkHeadConfig.MERCHANT_SERVICE_BHC);
+        this.altcraftServiceCB = circuitBreakerRegistry.circuitBreaker(ALTCRAFT_SERVICE_BREAKER, R4jCircuitBreakerConfig.MERCHANT_SERVICE_CBC);
+        this.altcraftServiceBH = bulkheadRegistry.bulkhead(ALTCRAFT_BH, R4jBulkHeadConfig.MERCHANT_SERVICE_BHC);
         this.restTemplateWrapper = restTemplateWrapper;
-        this.failedUserRepository = failedUserRepository;
         this.httpHeaders = new HttpHeaders();
         this.httpHeaders.set("Content-Type", "application/json");
     }
@@ -92,21 +91,22 @@ public class UserAltcraft {
                     false);
 
             if (isErrorResponse(response)){
-                Long id = userAltcraftRequest.getData().getId();
-                failedUserRepository.findByErrUserId(id).ifPresentOrElse(
-                        entity -> {
-                            entity.setTimestamp(LocalDateTime.now());
-                            System.out.println("--------------------");
-                            failedRequestService.saveFailedRequest(entity);
-                        },
-                        () -> {
-                            FailedRequestEntity failedRequest = new FailedRequestEntity();
-                            failedRequest.setErrUserId(id);
-                            failedRequest.setStatus(RequestStatus.FAILED);
-                            failedRequest.setTimestamp(LocalDateTime.now());
-                            failedRequestService.saveFailedRequest(failedRequest);
-                        }
-                );
+                failedRequestService.saveOrUpdateFailedRequest(userAltcraftRequest);
+//                Long id = userAltcraftRequest.getData().getId();
+//                failedUserRepository.findByErrUserId(id).ifPresentOrElse(
+//                        entity -> {
+//                            entity.setFailOccuredTime(LocalDateTime.now());
+//                            System.out.println("--------------------");
+//                            failedRequestService.saveFailedRequest(entity);
+//                        },
+//                        () -> {
+//                            FailedRequestEntity failedRequest = new FailedRequestEntity();
+//                            failedRequest.setErrUserId(id);
+//                            failedRequest.setStatus(RequestStatus.FAILED);
+//                            failedRequest.setFailOccuredTime(LocalDateTime.now());
+//                            failedRequestService.saveFailedRequest(failedRequest);
+//                        }
+//                );
             }
 
 

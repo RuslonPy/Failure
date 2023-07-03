@@ -30,16 +30,14 @@ public class FailedRequestScheduler {
     private final HttpHeaders httpHeaders;
     private final JpaReposListener jpaReposListener;
     private final ListenerMapper mapper;
-    private final FailedUserRepository failedUserRepository;
     @Value("${alt-craft.test.url}")
     private String testUrl;
 
-    public FailedRequestScheduler(FailedRequestService failedRequestService, RestTemplate restTemplate, JpaReposListener jpaReposListener, ListenerMapper mapper, FailedUserRepository failedUserRepository) {
+    public FailedRequestScheduler(FailedRequestService failedRequestService, RestTemplate restTemplate, JpaReposListener jpaReposListener, ListenerMapper mapper) {
         this.failedRequestService = failedRequestService;
         this.restTemplate = restTemplate;
         this.jpaReposListener = jpaReposListener;
         this.mapper = mapper;
-        this.failedUserRepository = failedUserRepository;
         this.httpHeaders = new HttpHeaders();
         this.httpHeaders.set("Content-Type", "application/json");
     }
@@ -70,12 +68,13 @@ public class FailedRequestScheduler {
                     ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
                             .body(e.getResponseBodyAsString()));
         }finally {
-            if (body != null && body.getError() == 0){
-                failedUserRepository.findByErrUserId(id).ifPresent(failed -> {
-                    failed.setStatus(RequestStatus.SENT);
-                    failedRequestService.saveFailedRequest(failed);
-                });
-            }
+            failedRequestService.updateFailedRequestStatus(id, body);
+//            if (body != null && body.getError() == 0){
+//                failedUserRepository.findByErrUserId(id).ifPresent(failed -> {
+//                    failed.setStatus(RequestStatus.SENT);
+//                    failedRequestService.saveFailedRequest(failed);
+//                });
+//            }
         }
     }
 }

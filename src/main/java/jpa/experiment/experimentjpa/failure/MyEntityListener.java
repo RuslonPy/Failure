@@ -24,32 +24,36 @@ public class MyEntityListener {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter(){
             @Override
             public void afterCompletion(int status) {
-                String phone = entity.getPhone();
 
-                String customerId = entity.getCustomerId();
-
-                Long registeredDate = entity.getRegisteredDate();
-
-                Timestamp birthday = entity.getBirthday();
-
-                String appVersion = entity.getAppVersion();
-
-                String apelsinCustomerId = entity.getApelsinCustomerId();
-
-                String city = entity.getCity();
-
-                Lang lang = entity.getLang();
-
-                if (!StringUtils.isEmpty(phone) || !StringUtils.isEmpty(customerId) || Objects.nonNull(registeredDate) ||
-                        Objects.nonNull(birthday) || !StringUtils.isEmpty(appVersion)
-                        || !StringUtils.isEmpty(apelsinCustomerId) || !StringUtils.isEmpty(city) || Objects.nonNull(lang)){
-
+                if (isNotIt(entity)){
                     userAltcraft.sendingProfile(entity);
                 }
             }
         });
 
 
+    }
+
+    private boolean isNotIt(ListenerEntity entity){
+        String phone = entity.getPhone();
+
+        String customerId = entity.getCustomerId();
+
+        Long registeredDate = entity.getRegisteredDate();
+
+        Timestamp birthday = entity.getBirthday();
+
+        String appVersion = entity.getAppVersion();
+
+        String apelsinCustomerId = entity.getApelsinCustomerId();
+
+        String city = entity.getCity();
+
+        Lang lang = entity.getLang();
+
+        return !StringUtils.isEmpty(phone) || !StringUtils.isEmpty(customerId) || Objects.nonNull(registeredDate) ||
+                Objects.nonNull(birthday) || !StringUtils.isEmpty(appVersion)
+                || !StringUtils.isEmpty(apelsinCustomerId) || !StringUtils.isEmpty(city) || Objects.nonNull(lang);
     }
 
 }

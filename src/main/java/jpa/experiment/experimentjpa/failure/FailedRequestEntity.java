@@ -21,6 +21,6 @@ public class FailedRequestEntity {
     private Long errUserId;
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
-    private LocalDateTime timestamp;
+    private LocalDateTime failOccuredTime;
 
 }
