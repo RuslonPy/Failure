@@ -5,8 +5,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Mapper(componentModel = "spring")
 public abstract class ListenerMapper {
@@ -31,18 +30,27 @@ public abstract class ListenerMapper {
     }
 
     public UserAltcraftRequest mapUserAltcraftRequest(ListenerEntity user) {
+
+//        if (user.getUserState() == ListenerEntity.State.DELETED) {
+//            UserAltcraftRequest userAltcraftRequest = new UserAltcraftRequest();
+//            userAltcraftRequest.setDbId(1);
+//            userAltcraftRequest.setToken(token);
+//            userAltcraftRequest.setMatching("phone");
+//            userAltcraftRequest.setPhone(user.getPhone());
+//            return userAltcraftRequest;
+//        }
         ListenerDto userAltcraftDto = mapUserAltcraftDto(user);
         UserAltcraftRequest userAltcraftRequest = new UserAltcraftRequest();
-        userAltcraftRequest.setDbId(1);
         userAltcraftRequest.setToken(token);
+        userAltcraftRequest.setDbId(1);
         userAltcraftRequest.setData(userAltcraftDto);
         return userAltcraftRequest;
     }
 
-    public List<String> getIdentificationList(ListenerEntity user) {
-        List<String> identification = new ArrayList<>();
-        if(user.getCustomerId() != null) identification.add("Kapitalbank");
-        if(user.getApelsinCustomerId() != null) identification.add("Apelsin");
+    public Map<String, String> getIdentificationList(ListenerEntity user) {
+        Map<String, String> identification = new HashMap<>();
+        identification.put("Kapital", user.getCustomerId() != null ? "true" : "false");
+        identification.put("Apelsin", user.getApelsinCustomerId() != null ? "true" : "false");
         return identification;
     }
 }

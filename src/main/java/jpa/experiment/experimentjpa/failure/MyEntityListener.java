@@ -1,21 +1,28 @@
 package jpa.experiment.experimentjpa.failure;
 
-import jpa.experiment.experimentjpa.altcraft.UserAltcraft;
-import jpa.experiment.experimentjpa.model.Lang;
+import io.github.resilience4j.core.StringUtils;
+import jpa.experiment.experimentjpa.delete.deleteservice.DeleteService;
+import jpa.experiment.experimentjpa.failure.service.UserProfiler;
 import jpa.experiment.experimentjpa.model.ListenerEntity;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+
 @Component
-@RequiredArgsConstructor
 public class MyEntityListener {
-    private final UserAltcraft userAltcraft;
+    private final UserProfiler userProfiler;
+    private final DeleteService deleteService;
+
+    public MyEntityListener(@Lazy UserProfiler userProfiler, DeleteService deleteService) {
+        this.userProfiler = userProfiler;
+        this.deleteService = deleteService;
+    }
 
     @PostPersist
     @PostUpdate
@@ -25,9 +32,14 @@ public class MyEntityListener {
             @Override
             public void afterCompletion(int status) {
 
-                if (isNotIt(entity)){
-                    userAltcraft.sendingProfile(entity);
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    if (entity.getUserState() == ListenerEntity.State.DELETED){
+                        deleteService.sendForDeleting(entity.getPhone());
+                    } else if (isNotIt(entity)) {
+                        CompletableFuture.runAsync(() -> userProfiler.sendProfile(entity));
+                    }
                 }
+
             }
         });
 
@@ -35,25 +47,16 @@ public class MyEntityListener {
     }
 
     private boolean isNotIt(ListenerEntity entity){
-        String phone = entity.getPhone();
-
-        String customerId = entity.getCustomerId();
-
-        Long registeredDate = entity.getRegisteredDate();
-
-        Timestamp birthday = entity.getBirthday();
-
-        String appVersion = entity.getAppVersion();
-
-        String apelsinCustomerId = entity.getApelsinCustomerId();
-
-        String city = entity.getCity();
-
-        Lang lang = entity.getLang();
-
-        return !StringUtils.isEmpty(phone) || !StringUtils.isEmpty(customerId) || Objects.nonNull(registeredDate) ||
-                Objects.nonNull(birthday) || !StringUtils.isEmpty(appVersion)
-                || !StringUtils.isEmpty(apelsinCustomerId) || !StringUtils.isEmpty(city) || Objects.nonNull(lang);
+        return StringUtils.isNotEmpty(entity.getPhone()) ||
+                StringUtils.isNotEmpty(entity.getCustomerId()) ||
+                Objects.nonNull(entity.getRegisteredDate()) ||
+                Objects.nonNull(entity.getBirthday()) ||
+                StringUtils.isNotEmpty(entity.getAppVersion()) ||
+                StringUtils.isNotEmpty(entity.getApelsinCustomerId()) ||
+                StringUtils.isNotEmpty(entity.getCity()) ||
+                Objects.nonNull(entity.getLang());
     }
+
+
 
 }

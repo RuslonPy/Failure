@@ -1,13 +1,11 @@
 package jpa.experiment.experimentjpa.service;
 
-import jpa.experiment.experimentjpa.model.ListenerDto;
 import jpa.experiment.experimentjpa.model.ListenerEntity;
 import jpa.experiment.experimentjpa.model.ListenerEntityDto;
 import jpa.experiment.experimentjpa.repository.JpaReposListener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -29,5 +27,18 @@ public class EntityServiceImpl implements EntityService{
         BeanUtils.copyProperties(dto, entity.get());
         entity.get().setId(id);
         repos.save(entity.get());
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        Optional<ListenerEntity> entity = repos.findById(id);
+        if(entity.isPresent()){
+            entity.get().setPhone(entity.get().getPhone());
+            entity.get().setBirthday(entity.get().getBirthday());
+            entity.get().setApelsinCustomerId(entity.get().getCustomerId());
+            entity.get().setCustomerId(entity.get().getCustomerId());
+            entity.get().setUserState(ListenerEntity.State.DELETED);
+            repos.save(entity.get());
+        }
     }
 }

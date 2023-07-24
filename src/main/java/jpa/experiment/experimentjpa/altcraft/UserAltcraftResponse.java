@@ -8,7 +8,7 @@ public class UserAltcraftResponse {
     @JsonProperty("error")
     private Integer error;
     @JsonProperty("error_text")
-    private String error_text;
+    private String errorText;
     @JsonProperty("profile_id")
-    private String profile_id;
+    private String profileId;
 }

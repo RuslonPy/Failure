@@ -1,14 +1,18 @@
 package jpa.experiment.experimentjpa.model;
 
 import jpa.experiment.experimentjpa.failure.MyEntityListener;
-import lombok.Data;
+import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
 @Entity
-@Data
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @EntityListeners(MyEntityListener.class)
 public class ListenerEntity implements Serializable{
 
@@ -39,6 +43,10 @@ public class ListenerEntity implements Serializable{
     @Enumerated(EnumType.STRING)
     private Lang lang;
 
+    @Column(name = "user_state")
+    @Enumerated(EnumType.STRING)
+    private State userState = State.ACTIVE;
+
     @Column(name = "man")
     private String man;
     @Column(name = "san")
@@ -52,5 +60,10 @@ public class ListenerEntity implements Serializable{
     @Column(name = "siza")
     private String siza;
 
-
+    public enum State {
+        ACTIVE,
+        PENDING,
+        BLOCKED,
+        DELETED
+    }
 }

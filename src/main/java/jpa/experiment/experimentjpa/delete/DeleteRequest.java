@@ -1,4 +1,4 @@
-package jpa.experiment.experimentjpa.altcraft;
+package jpa.experiment.experimentjpa.delete;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jpa.experiment.experimentjpa.model.ListenerDto;
@@ -8,13 +8,10 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserAltcraftRequest {
-    private String token;
+public class DeleteRequest {
     @JsonProperty("db_id")
-    private Integer dbId;
+    private Integer dbId = 1;
+    private String token;
     private String matching = "phone";
-    @JsonProperty("detect_geo")
-    private Boolean detectGeo = true;
-    private ListenerDto data;
-
+    private String phone;
 }

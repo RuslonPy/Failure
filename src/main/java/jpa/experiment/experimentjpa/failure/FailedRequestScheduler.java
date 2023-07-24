@@ -56,7 +56,7 @@ public class FailedRequestScheduler {
             }
         }
     }
-
+    ObjectMapper objectMapper = new ObjectMapper();
     public void  sendRequest(UserAltcraftRequest userAltcraftRequest, Long id) throws ExceptionMessage {
         UserAltcraftResponse body = null;
         try {

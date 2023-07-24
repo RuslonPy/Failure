@@ -6,4 +6,5 @@ import jpa.experiment.experimentjpa.model.ListenerEntityDto;
 public interface EntityService {
     void save(ListenerEntityDto dto);
     void update(ListenerEntityDto dto, Long id);
+    void deleteUser(Long id);
 }

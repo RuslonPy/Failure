@@ -27,4 +27,10 @@ public class ControllerIO {
         service.update(listenerDto, id);
         return new UserAltcraftResponse();
     }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") Long id){
+        service.deleteUser(id);
+        return ResponseEntity.ok("Entity status is changed to Deleted");
+    }
 }

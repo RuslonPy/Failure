@@ -58,7 +58,6 @@ public class UserAltcraft {
         this.httpHeaders.set("Content-Type", "application/json");
     }
 
-    @Async
     public void sendingProfile(ListenerEntity user) {
 
         try {
@@ -92,21 +91,6 @@ public class UserAltcraft {
 
             if (isErrorResponse(response)){
                 failedRequestService.saveOrUpdateFailedRequest(userAltcraftRequest);
-//                Long id = userAltcraftRequest.getData().getId();
-//                failedUserRepository.findByErrUserId(id).ifPresentOrElse(
-//                        entity -> {
-//                            entity.setFailOccuredTime(LocalDateTime.now());
-//                            System.out.println("--------------------");
-//                            failedRequestService.saveFailedRequest(entity);
-//                        },
-//                        () -> {
-//                            FailedRequestEntity failedRequest = new FailedRequestEntity();
-//                            failedRequest.setErrUserId(id);
-//                            failedRequest.setStatus(RequestStatus.FAILED);
-//                            failedRequest.setFailOccuredTime(LocalDateTime.now());
-//                            failedRequestService.saveFailedRequest(failedRequest);
-//                        }
-//                );
             }
 
 
@@ -117,17 +101,7 @@ public class UserAltcraft {
         } catch (RestClientException ex){
             // log rest client exception.
         } catch (Exception exception){
-//            Long id = userAltcraftRequest.getData().getId();
-//            getFailedRequestById(id).ifPresent(entity -> {
-//                entity.setTimestamp(LocalDateTime.now());
-//            });
-//            failed = new FailedRequestEntity();
-//            failed.setErrUserId(id);
-//            failed.setStatus(RequestStatus.FAILED);
-////            FailedRequestEntity entity = new FailedRequestEntity();
-////            entity.setErrUserId(userAltcraftRequest.getData().getId());
-////            entity.setStatus(RequestStatus.FAILED);
-//            failedRequestService.saveFailedRequest(failed);
+
         }
 
 
@@ -136,15 +110,12 @@ public class UserAltcraft {
     public boolean isErrorResponse(UserAltcraftResponse response) {
         return response == null || response.getError() != 0;
     }
-//    private Optional<FailedRequestEntity> getFailedRequestById(Long id) {
-//        return failedUserRepository.findByErrUserId(id);
-//    }
 
     public UserAltcraftResponse response(){
         UserAltcraftResponse user = new UserAltcraftResponse();
         user.setError(user.getError());
-        user.setError_text(user.getError_text());
-        user.setProfile_id(user.getProfile_id());
+        user.setErrorText(user.getErrorText());
+        user.setProfileId(user.getProfileId());
         return user;
     }
 //    private HttpHeaders getHeaders() {

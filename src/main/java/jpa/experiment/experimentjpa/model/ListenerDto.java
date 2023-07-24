@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Data
 public class ListenerDto {
@@ -18,7 +17,7 @@ public class ListenerDto {
     @JsonProperty("appVersion")
     private String appVersion;
     @JsonProperty("identification")
-    private List<String> identification = new ArrayList<>();
+    private Map identification = new HashMap<>();
     @JsonProperty("_regdate")
     private Long registeredDate;
     @JsonProperty("_city")
