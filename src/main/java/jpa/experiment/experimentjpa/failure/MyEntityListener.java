@@ -1,6 +1,7 @@
 package jpa.experiment.experimentjpa.failure;
 
 import io.github.resilience4j.core.StringUtils;
+import jpa.experiment.experimentjpa.altcraft.UserAltcraft;
 import jpa.experiment.experimentjpa.delete.deleteservice.DeleteService;
 import jpa.experiment.experimentjpa.failure.service.UserProfiler;
 import jpa.experiment.experimentjpa.model.ListenerEntity;
@@ -17,11 +18,9 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class MyEntityListener {
     private final UserProfiler userProfiler;
-    private final DeleteService deleteService;
 
-    public MyEntityListener(@Lazy UserProfiler userProfiler, DeleteService deleteService) {
+    public MyEntityListener(@Lazy UserProfiler userProfiler) {
         this.userProfiler = userProfiler;
-        this.deleteService = deleteService;
     }
 
     @PostPersist
@@ -31,15 +30,9 @@ public class MyEntityListener {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter(){
             @Override
             public void afterCompletion(int status) {
-
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    if (entity.getUserState() == ListenerEntity.State.DELETED){
-                        deleteService.sendForDeleting(entity.getPhone());
-                    } else if (isNotIt(entity)) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED && isNotIt(entity)) {
                         CompletableFuture.runAsync(() -> userProfiler.sendProfile(entity));
-                    }
                 }
-
             }
         });
 

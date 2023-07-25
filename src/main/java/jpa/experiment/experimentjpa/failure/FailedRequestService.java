@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Service
 @Log4j2
-public class FailedRequestService implements FailedService{
+public class FailedRequestService implements FailedService {
     //<editor-fold desc="Whenever if users transfer fails">
     private final FailedUserRepository failedUserRepository;
     //</editor-fold>
@@ -24,13 +24,11 @@ public class FailedRequestService implements FailedService{
 
     //<editor-fold desc="Description">
     @Override
-    public void updateFailedRequestStatus(Long id, UserAltcraftResponse body) {
-        if (body != null && body.getError() == 0) {
-            failedUserRepository.findByErrUserId(id).ifPresent(failed -> {
-                failed.setStatus(RequestStatus.SENT);
-                failedUserRepository.save(failed);
-            });
-        }
+    public void updateFailedRequestStatus(Long id) {
+        failedUserRepository.findByErrUserId(id).ifPresent(failed -> {
+            failed.setStatus(RequestStatus.SENT);
+            failedUserRepository.save(failed);
+        });
     }
     //</editor-fold>
 

@@ -8,6 +8,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import jpa.experiment.experimentjpa.config.R4jBulkHeadConfig;
 import jpa.experiment.experimentjpa.config.R4jCircuitBreakerConfig;
 import jpa.experiment.experimentjpa.config.RestTemplateWrapper;
+import jpa.experiment.experimentjpa.delete.DeleteRequest;
 import jpa.experiment.experimentjpa.exception.ExceptionMessage;
 import jpa.experiment.experimentjpa.failure.FailedRequestEntity;
 import jpa.experiment.experimentjpa.failure.FailedRequestService;
@@ -29,7 +30,7 @@ import java.util.Optional;
 @Service
 @Log4j2
 public class UserAltcraft {
-    private  ListenerMapper mapper;
+    private ListenerMapper mapper;
     private HttpHeaders httpHeaders;
     private FailedRequestService failedRequestService;
     private final RestTemplate restTemplate;
@@ -39,9 +40,10 @@ public class UserAltcraft {
     private static final String ALTCRAFT_SERVICE_BREAKER = "altcraft-service-cb";
     private static final String ALTCRAFT_BH = "arca-bulkhead";
 
-//    private final LogService logService;
+    //    private final LogService logService;
 //    @Value("${alt-craft.test.url}")
-    private String testUrl = "https://cdp.uzum.io/api/v1.1/profiles/import";
+    private String userUrl = "https://cdp.uzum.io/api/v1.1/profiles/import";
+    private String deleteUrl = "https://cdp.uzum.io/api/v1.1/profiles/delete";
 
     public UserAltcraft(ListenerMapper mapper,
                         FailedRequestService failedRequestService,
@@ -58,11 +60,17 @@ public class UserAltcraft {
         this.httpHeaders.set("Content-Type", "application/json");
     }
 
-    public void sendingProfile(ListenerEntity user) {
-
+    public <T> void sendingProfile(T user) {
         try {
-            UserAltcraftRequest altCraftRequest = mapper.mapUserAltcraftRequest(user);
-            sendRequest(altCraftRequest);
+            if (ListenerEntity.State.DELETED == ((ListenerEntity) user).getUserState()) {
+                DeleteRequest deleteRequest = new DeleteRequest();
+                deleteRequest.setToken("e29bee5f98e8479bb4e8fe6831f39359");
+                deleteRequest.setPhone(((ListenerEntity) user).getPhone());
+                sendRequest(deleteRequest, deleteUrl);
+            } else {
+                UserAltcraftRequest altCraftRequest = mapper.mapUserAltcraftRequest((ListenerEntity) user);
+                sendRequest(altCraftRequest, userUrl);
+            }
         } catch (ExceptionMessage e) {
             throw new RuntimeException(e);
         }
@@ -71,7 +79,7 @@ public class UserAltcraft {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
-    public void  sendRequest(UserAltcraftRequest userAltcraftRequest) throws ExceptionMessage{
+    public <T> void sendRequest(T request, String url) throws ExceptionMessage {
 
         UserAltcraftResponse response = null;
         try {
@@ -80,27 +88,30 @@ public class UserAltcraft {
                     altcraftServiceCB,
                     altcraftServiceBH,
                     true,
-                    testUrl,
+                    url,
                     HttpMethod.POST,
-                    userAltcraftRequest,
+                    request,
                     httpHeaders,
-                    new ParameterizedTypeReference<UserAltcraftResponse>() {
+                    new ParameterizedTypeReference<>() {
                     },
                     new UserAltcraftResponse(),
                     false);
 
-            if (isErrorResponse(response)){
-                failedRequestService.saveOrUpdateFailedRequest(userAltcraftRequest);
+            if(request.getClass() == UserAltcraftRequest.class) {
+                if (isErrorResponse(response)) {
+                    failedRequestService.saveOrUpdateFailedRequest((UserAltcraftRequest) request);
+                } else {
+                    failedRequestService.updateFailedRequestStatus(((UserAltcraftRequest) request).getData().getId());
+                }
             }
 
-
-        } catch (HttpStatusCodeException e){
+        } catch (HttpStatusCodeException e) {
             log.error("error log while occurred on transferring users: ",
                     ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
                             .body(e.getResponseBodyAsString()));
-        } catch (RestClientException ex){
+        } catch (RestClientException ex) {
             // log rest client exception.
-        } catch (Exception exception){
+        } catch (Exception exception) {
 
         }
 
@@ -111,7 +122,7 @@ public class UserAltcraft {
         return response == null || response.getError() != 0;
     }
 
-    public UserAltcraftResponse response(){
+    public UserAltcraftResponse response() {
         UserAltcraftResponse user = new UserAltcraftResponse();
         user.setError(user.getError());
         user.setErrorText(user.getErrorText());
